@@ -1,9 +1,9 @@
 from Tkinter import *
 from ttk import *
 import tkFileDialog
-import ConfigParser
 import winsound
-import time
+import codecs
+import json
 import os
 
 
@@ -13,8 +13,7 @@ class Notifier_GUI(Frame):
 
         # Settings
         self.master.protocol("WM_DELETE_WINDOW", self.quit_program)
-        self.config = ConfigParser.RawConfigParser()
-        self.config.read("config.cfg")
+        self.config = json.load(open("config.json", "r"))
         self.running = False
 
         # Menubar
@@ -47,12 +46,11 @@ class Notifier_GUI(Frame):
         self.config_load()
 
     def config_load(self):
-        keywords = self.config.get("Notifier", "keywords")
+        keywords = self.config["keywords"]
         self.keywords.insert(INSERT, keywords)
 
     def config_save(self):
-        with open("config.cfg", "w+") as configfile:
-            self.config.write(configfile)
+        json.dump(self.config, open("config.json", "w+"))
 
     def message_to_chat(self, message):
         self.chat.config(state=NORMAL)
@@ -65,7 +63,7 @@ class Notifier_GUI(Frame):
             self.stop_btn.config(state=NORMAL)
             self.keywords.config(state=DISABLED)
             keywords = self.keywords.get()
-            self.config.set("Notifier", "keywords", keywords)
+            self.config["keywords"] = keywords
             self.config_save()
             self.statusbar.set("Running!")
             self.run()
@@ -83,13 +81,13 @@ class Notifier_GUI(Frame):
             title="Open \"Client.txt\"",
             defaultextension=".txt",
             filetypes=[("Text files", "*.txt")],
-            initialfile=self.config.get("Notifier", "client_txt"))
+            initialfile=self.config["client_txt"])
         if cltxt_name:
-            self.config.set("Notifier", "client_txt", cltxt_name)
+            self.config["client_txt"] = cltxt_name
             self.config_save()
 
     def cltxt_valid(self):
-        cltxt_name = self.config.get("Notifier", "client_txt")
+        cltxt_name = self.config["client_txt"]
         if not cltxt_name:
             self.statusbar.set("No \"Client.txt\" file specified!")
             return False
@@ -121,19 +119,18 @@ class Notifier_GUI(Frame):
 
     def run(self):
         self.running = True
-        cltxt_name = self.config.get("Notifier", "client_txt")
+        cltxt_name = self.config["client_txt"]
         fsize = os.stat(cltxt_name)[6]
-        f = open(cltxt_name, "r")
+        f = codecs.open(cltxt_name, "r", "utf8")
         f.seek(fsize)
         self.search_cltxt(cltxt_name, fsize, f)
 
     def search_cltxt(self, cltxt_name, fsize, f):
-        keywords = self.config.get("Notifier", "keywords")
+        keywords = self.config["keywords"]
         keywords = [w.strip() for w in keywords.split(",")]
         where = f.tell()
         line = f.readline()
         if not line:
-            # time.sleep(1) #  KA ob ich das doch noch brauche :S hoffentlich nicht!
             f.seek(where)
         else:
             line = " ".join(line.split()[7:]) + "\n"
