@@ -13,7 +13,6 @@ class Notifier_GUI(Frame):
 
         # Settings
         self.master.protocol("WM_DELETE_WINDOW", self.quit_program)
-        self.config = json.load(open("config.json", "r"))
         self.running = False
 
         # Menubar
@@ -43,11 +42,21 @@ class Notifier_GUI(Frame):
         self.statusbar = StatusBar(self)
         self.statusbar.grid(row=2, column=0, columnspan=4, sticky=E + W)
 
+        # Config
         self.config_load()
 
     def config_load(self):
+        try:
+            self.config = json.load(open("config.json", "r"))
+        except IOError:
+            self.config_create()
+            self.config = json.load(open("config.json", "r"))
         keywords = self.config["keywords"]
         self.keywords.insert(INSERT, keywords)
+
+    def config_create(self):
+        with open("config.json", "w+") as config_file:
+            config_file.write('{"keywords": "", "client_txt": ""}')
 
     def config_save(self):
         json.dump(self.config, open("config.json", "w+"))
@@ -149,8 +158,6 @@ class Notifier_GUI(Frame):
         if self.running:
             self.stop()
         self.quit()
-
-
 
 
 class StatusBar(Frame):
